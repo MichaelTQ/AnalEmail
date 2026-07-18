@@ -1,10 +1,12 @@
-"""163 邮箱 AI 助手第一阶段入口。"""
+"""163 邮箱 AI 助手命令行入口。"""
 
 from __future__ import annotations
 
+import json
 import sys
 from typing import Any
 
+from ai_analyzer import AIAnalyzerError, analyze_email
 from config import ConfigError, load_config
 from email_client import EmailClientError, fetch_recent_emails
 from email_parser import parse_email
@@ -32,6 +34,12 @@ def _print_email(index: int, email_data: dict[str, Any]) -> None:
     print(SEPARATOR)
 
 
+def _print_analysis(analysis: dict[str, Any]) -> None:
+    print("最新邮件 AI 分析：")
+    print(json.dumps(analysis, ensure_ascii=False, indent=2))
+    print(SEPARATOR)
+
+
 def main() -> int:
     try:
         config = load_config()
@@ -42,6 +50,7 @@ def main() -> int:
 
     success_count = 0
     failure_count = 0
+    first_parsed: dict[str, Any] | None = None
 
     if not messages:
         print("INBOX 中没有可读取的邮件。")
@@ -50,6 +59,13 @@ def main() -> int:
         try:
             parsed = parse_email(message)
             _print_email(index, parsed)
+            #分析第三封邮件
+            if index == 3:
+                first_parsed = parsed
+
+            '''
+            if first_parsed is None:#分析第一封邮件
+                first_parsed = parsed'''
             success_count += 1
         except Exception as exc:
             failure_count += 1
@@ -62,7 +78,16 @@ def main() -> int:
             )
             print(SEPARATOR, file=sys.stderr)
 
-    print(f"处理完成：成功 {success_count} 封，失败 {failure_count} 封。")
+    print(f"邮件解析完成：成功 {success_count} 封，失败 {failure_count} 封。")
+
+    if first_parsed is not None:
+        try:
+            analysis = analyze_email(first_parsed, config)
+            _print_analysis(analysis)
+        except AIAnalyzerError as exc:
+            print(f"AI 分析失败：{exc}", file=sys.stderr)
+            return 3
+
     return 0 if failure_count == 0 else 2
 
 

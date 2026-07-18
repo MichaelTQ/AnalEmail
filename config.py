@@ -20,6 +20,8 @@ class Config:
     imap_host: str
     imap_port: int
     email_limit: int
+    ollama_base_url: str
+    ollama_model: str
 
 
 def _read_positive_int(name: str) -> int:
@@ -51,6 +53,8 @@ def load_config(env_path: Path | None = None) -> Config:
         "IMAP_HOST",
         "IMAP_PORT",
         "EMAIL_LIMIT",
+        "OLLAMA_BASE_URL",
+        "OLLAMA_MODEL",
     )
     missing = [name for name in required_names if not os.getenv(name, "").strip()]
     if missing:
@@ -72,4 +76,6 @@ def load_config(env_path: Path | None = None) -> Config:
         imap_host=os.environ["IMAP_HOST"].strip(),
         imap_port=imap_port,
         email_limit=email_limit,
+        ollama_base_url=os.environ["OLLAMA_BASE_URL"].strip().rstrip("/"),
+        ollama_model=os.environ["OLLAMA_MODEL"].strip(),
     )
